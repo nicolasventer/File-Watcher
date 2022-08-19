@@ -1,0 +1,7 @@
+*.exe
+*.a
+.vscode/settings.json
+.vs
+x64
+Release
+*.dll
