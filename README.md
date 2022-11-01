@@ -8,7 +8,7 @@ FileWatcher is a **c library** that allows you to **watch a folder** and get not
 
 - watch a file or a folder
 - execute the callback for all files
-- exported c functions for use in other languages
+- exported c functions for use in other languages (careful not in Javascript, neihter in Python since callback cannot be called outside of the main thread).
 
 # Installation
 
