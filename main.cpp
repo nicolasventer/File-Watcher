@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 
-#include "filewatcher.h"
+#include "filewatcher.hpp"
 
 int usage()
 {
@@ -18,7 +18,7 @@ int main(int argc, const char* argv[])
 	bool bRecursive = true;
 	bool bWatching = true;
 
-	cWatch(folderPath, bRecursive, cPrintFileEvent, &bWatching);
+	file_watcher_watch_async(folderPath, bRecursive, file_watcher_print_file_event, &bWatching, nullptr);
 
 	std::cout << "Press enter to stop watching" << std::endl;
 	std::cin.get();

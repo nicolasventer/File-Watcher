@@ -2,20 +2,33 @@
 
 # Description
 
-FileWatcher is a **c library** that allows you to **watch a folder** and get notified of any file changes inside.
+FileWatcher is a **c++ library** that allows you to **watch a folder** and get notified of any file changes inside.
 
 # Features
 
 - watch a file or a folder
 - execute the callback for all files
-- exported c functions for use in other languages (careful not in Javascript, neihter in Python since callback cannot be called outside of the main thread).
+- exported c functions for use in other languages (see example: [test_filewatcher.py](test_filewatcher.py))
 
 # Installation
 
-Get the files [here](https://github.com/nicolasventer/File-Watcher/releases).
+*(Windows only)*
+
+Header only:  
+Include the [`filewatcher.hpp`](filewatcher.hpp) where you want to use the FileWatcher.
+
+Header and source:
 
 Include the [`filewatcher.h`](filewatcher.h) where you want to use the FileWatcher.
-Compile with the [`filewatcher.cpp`](filewatcher.cpp) file or with the built dll in the release.
+Compile with the [`filewatcher.cpp`](filewatcher.cpp) file or with the built dll available [here](https://github.com/nicolasventer/File-Watcher/releases).
+
+Build the dll:
+
+```bash
+g++ -shared -fPIC -static -o filewatcher.dll filewatcher.cpp
+```
+
+Note: the `-static` flag is required.
 
 c++17 or later compilation required for cpp compilation.  
 No external dependencies.
@@ -24,6 +37,12 @@ No external dependencies.
 
 Content of [main.cpp](main.cpp)
 ```cpp
+#include <chrono>
+#include <iostream>
+#include <string>
+
+#include "filewatcher.hpp"
+
 int usage()
 {
 	std::cout << "Usage: FileWatcher.exe [folderPath]" << std::endl;
@@ -38,7 +57,7 @@ int main(int argc, const char* argv[])
 	bool bRecursive = true;
 	bool bWatching = true;
 
-	cWatch(folderPath, bRecursive, cPrintFileEvent, &bWatching);
+	file_watcher_watch_async(folderPath, bRecursive, file_watcher_print_file_event, &bWatching, nullptr);
 
 	std::cout << "Press enter to stop watching" << std::endl;
 	std::cin.get();
@@ -68,8 +87,9 @@ Watching stopped, press enter to exit
 
 # Usage
 
-Most important:
 ```cpp
+#define EXPORT __declspec(dllexport)
+
 typedef enum
 {
 	added = 1,
@@ -77,20 +97,30 @@ typedef enum
 	modified,
 	renamed_old,
 	renamed_new,
-} Event;
+} file_watcher_event_type;
 
-static const char* eventToStringArray[] = {"", "added", "removed", "modified", "renamed_old", "renamed_new"};
+static const char* file_watcher_event_type_str[] = {"", "added", "removed", "modified", "renamed_old", "renamed_new"};
 
-#define C_FILE_PARAM  const char *file, Event event, void *data
-#define C_FILE_LAMBDA [](C_FILE_PARAM) // no capture --> use data
-typedef void (*CFileCallback)(C_FILE_PARAM);
+#define FILE_WATCHER_FILE_EVENT_PARAM const char *file, file_watcher_event_type event, bool is_directory, void *data
+#define FILE_WATCHER_FILE_LAMBDA	  [](FILE_WATCHER_FILE_EVENT_PARAM) // no capture --> use data
+typedef void (*file_watcher_callback)(FILE_WATCHER_FILE_EVENT_PARAM);
 
-// example callback function
-extern "C" void cPrintFileEvent(C_FILE_PARAM);
+extern "C"
+{
+	// example callback function
+	EXPORT void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM);
 
-// non blocking function, change the value of bWatching to stop the thread
-extern "C" void cWatch(
-	const char* folderPath, bool bRecursive, CFileCallback cFileCallback, bool* bWatching = nullptr, void* data = nullptr);
+	// blocking function
+	EXPORT void file_watcher_watch_sync(
+		const char* folder_path, bool b_recursive, file_watcher_callback callback, void* data = nullptr);
+
+	// non blocking function, change the value of bWatching to stop the thread
+	EXPORT void file_watcher_watch_async(const char* folder_path,
+		bool b_recursive,
+		file_watcher_callback callback,
+		bool* bWatching = nullptr,
+		void* data = nullptr);
+}
 ```
 
 # Licence

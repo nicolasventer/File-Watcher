@@ -1,6 +1,38 @@
 // Copyright (c) Nicolas VENTER All rights reserved.
 
-#include "filewatcher.h"
+#pragma once
+
+typedef enum
+{
+	added = 1,
+	removed,
+	modified,
+	renamed_old,
+	renamed_new,
+} file_watcher_event_type;
+
+static const char* file_watcher_event_type_str[] = {"", "added", "removed", "modified", "renamed_old", "renamed_new"};
+
+#define FILE_WATCHER_FILE_EVENT_PARAM const char *file, file_watcher_event_type event, bool is_directory, void *data
+#define FILE_WATCHER_FILE_LAMBDA	  [](FILE_WATCHER_FILE_EVENT_PARAM) // no capture --> use data
+typedef void (*file_watcher_callback)(FILE_WATCHER_FILE_EVENT_PARAM);
+
+extern "C"
+{
+	// example callback function
+	static void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM);
+
+	// blocking function
+	static void file_watcher_watch_sync(
+		const char* folder_path, bool b_recursive, file_watcher_callback callback, void* data = nullptr);
+
+	// non blocking function, change the value of bWatching to stop the thread
+	static void file_watcher_watch_async(const char* folder_path,
+		bool b_recursive,
+		file_watcher_callback callback,
+		bool* bWatching = nullptr,
+		void* data = nullptr);
+}
 
 #include "Windows.h"
 
@@ -19,39 +51,37 @@ void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM)
 class EventFilter
 {
 public:
-	bool operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType);
+	bool operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType)
+	{
+		auto it = toIgnoreSet.find(formattedPath);
+		switch (filewatchEventType)
+		{
+		case file_watcher_event_type::removed:
+		case file_watcher_event_type::renamed_old:
+			if (it != toIgnoreSet.end()) toIgnoreSet.erase(it);
+			return true;
+		case file_watcher_event_type::renamed_new:
+			return true;
+		case file_watcher_event_type::modified: // pattern: modified, modified
+		case file_watcher_event_type::added:	// pattern: added, modified
+			if (it == toIgnoreSet.end())
+			{
+				toIgnoreSet.insert(formattedPath);
+				return true;
+			}
+			else
+			{
+				toIgnoreSet.erase(it);
+				return false;
+			}
+		default:
+			return true;
+		}
+	}
 
 private:
 	std::set<std::string> toIgnoreSet;
 };
-
-bool EventFilter::operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType)
-{
-	auto it = toIgnoreSet.find(formattedPath);
-	switch (filewatchEventType)
-	{
-	case file_watcher_event_type::removed:
-	case file_watcher_event_type::renamed_old:
-		if (it != toIgnoreSet.end()) toIgnoreSet.erase(it);
-		return true;
-	case file_watcher_event_type::renamed_new:
-		return true;
-	case file_watcher_event_type::modified: // pattern: modified, modified
-	case file_watcher_event_type::added:	// pattern: added, modified
-		if (it == toIgnoreSet.end())
-		{
-			toIgnoreSet.insert(formattedPath);
-			return true;
-		}
-		else
-		{
-			toIgnoreSet.erase(it);
-			return false;
-		}
-	default:
-		return true;
-	}
-}
 
 static void file_watcher_watch_sync_p(
 	const char* folder_path, bool b_recursive, file_watcher_callback callback, bool* bWatching, void* data)
