@@ -19,7 +19,7 @@ Include the [`filewatcher.hpp`](filewatcher.hpp) where you want to use the FileW
 
 Header and source:
 
-Include the [`filewatcher.h`](filewatcher.h) where you want to use the FileWatcher.
+Include the [`filewatcher.h`](filewatcher.h) where you want to use the FileWatcher.  
 Compile with the [`filewatcher.cpp`](filewatcher.cpp) file or with the built dll available [here](https://github.com/nicolasventer/File-Watcher/releases).
 
 Build the dll:
@@ -30,7 +30,7 @@ g++ -shared -fPIC -static -o filewatcher.dll filewatcher.cpp
 
 Note: the `-static` flag is required.
 
-c++17 or later compilation required for cpp compilation.  
+c++17 or later required for compilation.  
 No external dependencies.
 
 # Example
