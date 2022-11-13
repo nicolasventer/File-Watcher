@@ -14,21 +14,24 @@ FileWatcher is a **c++ library** that allows you to **watch a folder** and get n
 
 *(Windows only)*
 
-Header only:  
+### Header only:
+
 Include the [`filewatcher.hpp`](filewatcher.hpp) where you want to use the FileWatcher.
 
-Header and source:
+### Header and source:
 
 Include the [`filewatcher.h`](filewatcher.h) where you want to use the FileWatcher.  
 Compile with the [`filewatcher.cpp`](filewatcher.cpp) file or with the built dll available [here](https://github.com/nicolasventer/File-Watcher/releases).
 
-Build the dll:
+### Build the dll:
 
 ```bash
 g++ -shared -fPIC -static -o filewatcher.dll filewatcher.cpp
 ```
 
 Note: the `-static` flag is required.
+
+### Requirements
 
 c++17 or later required for compilation.  
 No external dependencies.
