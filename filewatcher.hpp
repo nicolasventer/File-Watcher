@@ -17,29 +17,44 @@ static const char* file_watcher_event_type_str[] = {"", "added", "removed", "mod
 #define FILE_WATCHER_FILE_LAMBDA	  [](FILE_WATCHER_FILE_EVENT_PARAM) // no capture --> use data
 typedef void (*file_watcher_callback)(FILE_WATCHER_FILE_EVENT_PARAM);
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
 	// example callback function
-	static void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM);
+	void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM);
 
 	// blocking function
-	static void file_watcher_watch_sync(
-		const char* folder_path, bool b_recursive, file_watcher_callback callback, void* data = nullptr);
+	// NULL can be passed for bWatching and data
+	void file_watcher_watch_sync(
+		const char* folder_path, bool b_recursive, file_watcher_callback callback, bool* bWatching, void* data);
 
 	// non blocking function, change the value of bWatching to stop the thread
-	static void file_watcher_watch_async(const char* folder_path,
-		bool b_recursive,
-		file_watcher_callback callback,
-		bool* bWatching = nullptr,
-		void* data = nullptr);
+	// NULL can be passed for bWatching and data
+	void file_watcher_watch_async(
+		const char* folder_path, bool b_recursive, file_watcher_callback callback, bool* bWatching, void* data);
+
+#ifdef __cplusplus
 }
+
+#include <set>
+#include <string>
+
+class EventFilter
+{
+public:
+	bool operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType);
+
+private:
+	std::set<std::string> toIgnoreSet;
+};
+
+#ifdef FILE_WATCHER_IMPLEMENTATION
 
 #include "Windows.h"
 
 #include <filesystem>
 #include <iostream>
-#include <set>
-#include <string>
 #include <thread>
 
 void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM)
@@ -48,47 +63,40 @@ void file_watcher_print_file_event(FILE_WATCHER_FILE_EVENT_PARAM)
 			  << file_watcher_event_type_str[event] << std::endl;
 }
 
-class EventFilter
+bool EventFilter::operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType)
 {
-public:
-	bool operator()(const std::string& formattedPath, const file_watcher_event_type filewatchEventType)
+	auto it = toIgnoreSet.find(formattedPath);
+	switch (filewatchEventType)
 	{
-		auto it = toIgnoreSet.find(formattedPath);
-		switch (filewatchEventType)
+	case file_watcher_event_type::removed:
+	case file_watcher_event_type::renamed_old:
+		if (it != toIgnoreSet.end()) toIgnoreSet.erase(it);
+		return true;
+	case file_watcher_event_type::renamed_new:
+		return true;
+	case file_watcher_event_type::modified: // pattern: modified, modified
+	case file_watcher_event_type::added:	// pattern: added, modified
+		if (it == toIgnoreSet.end())
 		{
-		case file_watcher_event_type::removed:
-		case file_watcher_event_type::renamed_old:
-			if (it != toIgnoreSet.end()) toIgnoreSet.erase(it);
-			return true;
-		case file_watcher_event_type::renamed_new:
-			return true;
-		case file_watcher_event_type::modified: // pattern: modified, modified
-		case file_watcher_event_type::added:	// pattern: added, modified
-			if (it == toIgnoreSet.end())
-			{
-				toIgnoreSet.insert(formattedPath);
-				return true;
-			}
-			else
-			{
-				toIgnoreSet.erase(it);
-				return false;
-			}
-		default:
+			toIgnoreSet.insert(formattedPath);
 			return true;
 		}
+		else
+		{
+			toIgnoreSet.erase(it);
+			return false;
+		}
+	default:
+		return true;
 	}
+}
 
-private:
-	std::set<std::string> toIgnoreSet;
-};
-
-static void file_watcher_watch_sync_p(
+void file_watcher_watch_sync(
 	const char* folder_path, bool b_recursive, file_watcher_callback callback, bool* bWatching, void* data)
 {
 	if (!bWatching) bWatching = new bool(true);
 	*bWatching = true;
-	static const DWORD timeout = 100'000; // 100 seconds timeout
+	static const DWORD timeout = 100000; // 100 seconds timeout
 	std::string formattedFolderPath = std::filesystem::absolute(folder_path).string();
 	HANDLE hDirectory = CreateFileA(formattedFolderPath.c_str(),
 		FILE_LIST_DIRECTORY,
@@ -133,16 +141,12 @@ static void file_watcher_watch_sync_p(
 	}
 }
 
-void file_watcher_watch_sync(const char* folder_path, bool b_recursive, file_watcher_callback callback, void* data)
-{
-	bool bWatching = true;
-	file_watcher_watch_sync_p(folder_path, b_recursive, callback, &bWatching, data);
-}
-
 void file_watcher_watch_async(
 	const char* folder_path, bool b_recursive, file_watcher_callback callback, bool* bWatching, void* data)
 {
-	std::thread([folder_path, b_recursive, callback, &bWatching, data]()
-		{ file_watcher_watch_sync_p(folder_path, b_recursive, callback, bWatching, data); })
-		.detach();
+	std::thread(file_watcher_watch_sync, folder_path, b_recursive, callback, bWatching, data).detach();
 }
+
+#endif // FILE_WATCHER_IMPLEMENTATION
+
+#endif // __cplusplus

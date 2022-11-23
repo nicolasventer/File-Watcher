@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 
+#define FILE_WATCHER_IMPLEMENTATION
 #include "filewatcher.hpp"
 
 int usage()

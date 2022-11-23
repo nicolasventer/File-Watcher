@@ -9,9 +9,22 @@ dll_path = os.path.join(os.path.dirname(
 # Load the dll file
 dll = ctypes.cdll.LoadLibrary(dll_path)
 
-# Define the callback function
+# void (*file_watcher_callback) (const char *file, file_watcher_event_type event, bool is_directory, void *data)
 
-# Callback function type: const char *file, file_watcher_event_type event, bool is_directory, void *data
+# Define the callback function type
+callback_type = ctypes.CFUNCTYPE(
+    None, ctypes.c_char_p, ctypes.c_int, ctypes.c_bool, ctypes.c_void_p)
+
+# void file_watcher_watch_async (const char* folder_path,
+# 		bool b_recursive,
+# 		file_watcher_callback callback,
+# 		bool* bWatching,
+# 		void* data);
+
+# Define the function
+dll.file_watcher_watch_async.argtypes = [
+    ctypes.c_char_p, ctypes.c_bool, callback_type, ctypes.POINTER(ctypes.c_bool), ctypes.c_void_p]
+dll.file_watcher_watch_async.restype = None
 
 
 def callback(file, event, is_directory, data):
@@ -19,25 +32,13 @@ def callback(file, event, is_directory, data):
         file, event, is_directory, data))
 
 
-# Define the callback function type
-callback_type = ctypes.CFUNCTYPE(
-    None, ctypes.c_char_p, ctypes.c_int, ctypes.c_bool, ctypes.c_void_p)
-
-# Define the callback function
-callback_func = callback_type(callback)
-
 print('Start watching, press Ctrl+C to stop...')
-
-# file_watcher_watch_async (const char* folder_path,
-# 		bool b_recursive,
-# 		file_watcher_callback callback,
-# 		bool* bWatching = nullptr,
-# 		void* data = nullptr);
 
 # Call the function
 folder_path = b'.'
 b_recursive = True
 bWatching = ctypes.c_bool()
+callback_func = callback_type(callback)
 dll.file_watcher_watch_async(folder_path, b_recursive,
                              callback_func, ctypes.byref(bWatching), None)
 
