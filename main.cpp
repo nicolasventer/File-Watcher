@@ -3,7 +3,7 @@
 #include <string>
 
 #define FILE_WATCHER_IMPLEMENTATION
-#include "filewatcher.hpp"
+#include "file_watcher.hpp"
 
 int usage()
 {

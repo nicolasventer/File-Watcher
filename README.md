@@ -8,7 +8,7 @@ FileWatcher is a **c++ library** that allows you to **watch a folder** and get n
 
 - watch a file or a folder
 - execute the callback for all files
-- exported c functions for use in other languages (see example: [test_filewatcher.py](test_filewatcher.py))
+- exported c functions for use in other languages (see example: [test_file_watcher.py](test_file_watcher.py))
 
 # Installation
 
@@ -16,25 +16,23 @@ FileWatcher is a **c++ library** that allows you to **watch a folder** and get n
 
 ### Header only
 
-<!-- TODO: rename all file_watcher -->
-
-Include the [`filewatcher.hpp`](filewatcher.hpp) anywhere you want to use it.  
+Include the [`file_watcher.hpp`](file_watcher.hpp) anywhere you want to use it.  
 And above only one include, define `FILE_WATCHER_IMPLEMENTATION` like this:
 
 ```cpp
 #define FILE_WATCHER_IMPLEMENTATION
-#include "filewatcher.hpp"
+#include "file_watcher.hpp"
 ```
 
 ### Header and source
 
-Include the [`filewatcher.hpp`](filewatcher.hpp) anywhere you want to use it.    
-Compile with the [`filewatcher.cpp`](filewatcher.cpp) file or with the built dll available [here](https://github.com/nicolasventer/File-Watcher/releases).
+Include the [`file_watcher.hpp`](file_watcher.hpp) anywhere you want to use it.    
+Compile with the [`file_watcher.cpp`](file_watcher.cpp) file or with the built dll available [here](https://github.com/nicolasventer/File-Watcher/releases).
 
 ### Build the dll
 
 ```bash
-g++ -shared -O3 -fPIC -static -o filewatcher.dll filewatcher.cpp
+g++ -shared -O3 -fPIC -static -o file_watcher.dll file_watcher.cpp
 ```
 
 Note: the `-static` flag is required.
@@ -52,11 +50,11 @@ Content of [main.cpp](main.cpp)
 #include <iostream>
 #include <string>
 
-#include "filewatcher.hpp"
+#include "file_watcher.hpp"
 
 int usage()
 {
-	std::cout << "Usage: FileWatcher.exe [folderPath]" << std::endl;
+	std::cout << "Usage: File_Watcher.exe [folderPath]" << std::endl;
 	return 1;
 }
 
@@ -86,12 +84,12 @@ Possible output:
 ```
 Press enter to stop watching
 D:\Projets\C++\File-Watcher\main.cpp modified
-D:\Projets\C++\File-Watcher\filewatcher.h removed
-D:\Projets\C++\File-Watcher\filewatcher.h added
-D:\Projets\C++\File-Watcher\filewatcher.h renamed_old
-D:\Projets\C++\File-Watcher\filewatcher.hh renamed_new
-D:\Projets\C++\File-Watcher\filewatcher.hh renamed_old
-D:\Projets\C++\File-Watcher\filewatcher.h renamed_new
+D:\Projets\C++\File-Watcher\file_watcher.h removed
+D:\Projets\C++\File-Watcher\file_watcher.h added
+D:\Projets\C++\File-Watcher\file_watcher.h renamed_old
+D:\Projets\C++\File-Watcher\file_watcher.hh renamed_new
+D:\Projets\C++\File-Watcher\file_watcher.hh renamed_old
+D:\Projets\C++\File-Watcher\file_watcher.h renamed_new
 
 Watching stopped, press enter to exit
 ```
@@ -113,7 +111,6 @@ typedef enum
 static const char* file_watcher_event_type_str[] = {"", "added", "removed", "modified", "renamed_old", "renamed_new"};
 
 #define FILE_WATCHER_FILE_EVENT_PARAM const char *file, file_watcher_event_type event, bool is_directory, void *data
-#define FILE_WATCHER_FILE_LAMBDA	  [](FILE_WATCHER_FILE_EVENT_PARAM) // no capture --> use data
 typedef void (*file_watcher_callback)(FILE_WATCHER_FILE_EVENT_PARAM);
 
 extern "C"

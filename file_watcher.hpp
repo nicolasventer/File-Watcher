@@ -14,7 +14,6 @@ typedef enum
 static const char* file_watcher_event_type_str[] = {"", "added", "removed", "modified", "renamed_old", "renamed_new"};
 
 #define FILE_WATCHER_FILE_EVENT_PARAM const char *file, file_watcher_event_type event, bool is_directory, void *data
-#define FILE_WATCHER_FILE_LAMBDA	  [](FILE_WATCHER_FILE_EVENT_PARAM) // no capture --> use data
 typedef void (*file_watcher_callback)(FILE_WATCHER_FILE_EVENT_PARAM);
 
 #ifdef __cplusplus
